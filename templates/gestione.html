@@ -1,0 +1,76 @@
+{% extends "_base.html" %}
+{% from "_icone.html" import icona %}
+{# Endpoint riservato ai gestori (admin): /gestione #}
+{% block titolo %}Area gestori · Lumivia{% endblock %}
+
+{% block corpo %}
+<main class="contenitore">
+    <header class="testata">
+        <div class="entra">
+            <h1>Area gestori</h1>
+            <p>Account da attivare e tutto quello che è successo nell'applicazione.</p>
+        </div>
+        <span class="badge entra" style="--r: 1">{{ icona("busta") }} Email: {{ smtp }}</span>
+    </header>
+
+    <section class="pannello numeri-strip entra" style="--r: 1" aria-label="Riepilogo">
+        <div><span class="etichetta-piccola">Studenti</span><strong class="num" data-conta="{{ studenti }}">{{ studenti }}</strong></div>
+        <div><span class="etichetta-piccola">Foto nel database</span><strong class="num" data-conta="{{ foto }}" data-ritardo="100">{{ foto }}</strong></div>
+        <div><span class="etichetta-piccola">Utenti attivi</span><strong class="num" data-conta="{{ utenti_attivi }}" data-ritardo="200">{{ utenti_attivi }}</strong><small class="tenue">di cui {{ admin }} {{ "gestore" if admin == 1 else "gestori" }}</small></div>
+        <div class="{{ 'attenzione' if in_attesa }}"><span class="etichetta-piccola">In attesa di conferma</span><strong class="num" data-conta="{{ in_attesa|length }}" data-ritardo="300">{{ in_attesa|length }}</strong></div>
+    </section>
+
+    <div class="gestione-colonne">
+        <section class="pannello entra" style="--r: 2">
+            <div class="risultati-testa">
+                <h2>In attesa di conferma</h2>
+                <a class="btn btn-fantasma btn-piccolo" href="{{ url_for('gestione_utenti') }}">Tutti gli utenti {{ icona("avanti") }}</a>
+            </div>
+            {% if in_attesa %}
+            <ul class="elenco-attesa">
+                {% for u in in_attesa %}
+                <li class="riga" style="--i: {{ loop.index0 }}">
+                    <span class="avatar" style="--lato: 36px">{{ u.username[:1]|upper }}</span>
+                    <div>
+                        <strong>{{ u.username }}</strong>
+                        <small>{{ u.email or "nessuna email" }} · dal {{ u.creato|data_it }}</small>
+                    </div>
+                    <form method="POST" action="{{ url_for('attiva_utente', id_utente=u.id) }}">
+                        <input type="hidden" name="torna" value="pannello_gestione">
+                        <button class="btn btn-piccolo" type="submit">{{ icona("spunta") }} Attiva</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="vuoto">
+                {{ icona("spunta") }}
+                <strong>Nessuno in attesa</strong>
+                Tutti gli utenti hanno confermato la loro email.
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="pannello entra" style="--r: 3">
+            <div class="risultati-testa"><h2>Registro attività</h2><span class="tenue">ultime {{ attivita|length }}</span></div>
+            {% if attivita %}
+            <ol class="registro">
+                {% for a in attivita %}
+                {% set tono = 'rosso' if 'elimina' in a.azione else ('verde' if a.azione in ('nuovo studente', 'conferma email', 'attivazione manuale') else ('blu' if a.azione in ('modifica studente', 'cambio ruolo') else '')) %}
+                <li class="riga" style="--i: {{ loop.index0 }}">
+                    <span class="registro-punto {{ tono }}"></span>
+                    <div>
+                        <p><strong>{{ a.username or "Sistema" }}</strong> <span class="registro-azione {{ tono }}">{{ a.azione }}</span></p>
+                        {% if a.dettaglio %}<small>{{ a.dettaglio }}</small>{% endif %}
+                    </div>
+                    <time class="num tenue">{{ a.quando|data_it }}<br>{{ a.quando[11:16] }}</time>
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <div class="vuoto">{{ icona("attivita") }}<strong>Ancora niente qui</strong>Le operazioni compariranno in questo registro.</div>
+            {% endif %}
+        </section>
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "_accesso.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}Crea un account · Lumivia{% endblock %}
+
+{% block lato_titolo %}Un account, due minuti, un'email da confermare.{% endblock %}
+{% block lato_testo %}Dopo la registrazione ti arriva un link: aprilo e potrai consultare gli studenti. Le modifiche restano ai gestori.{% endblock %}
+
+{% block modulo %}
+    <h1 class="entra">Crea un account</h1>
+    <p class="sotto entra" style="--r: 1">Ti invieremo un'email per attivarlo.</p>
+
+    {% if errori %}
+    <div class="avviso avviso-errore" role="alert">
+        {{ icona("attenzione") }}
+        <ul>{% for e in errori %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('registrati') }}" class="entra" style="--r: 2" novalidate>
+        <div class="campo">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" value="{{ username }}"
+                   autocomplete="username" required minlength="3" maxlength="30"
+                   pattern="[A-Za-z0-9._\-]{3,30}" {% if not username %}autofocus{% endif %}>
+            <p class="aiuto">Da 3 a 30 caratteri: lettere, numeri, punto, trattino o underscore.</p>
+        </div>
+
+        <div class="campo">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ email }}"
+                   autocomplete="email" required maxlength="100" placeholder="nome@esempio.it">
+        </div>
+
+        <div class="campo">
+            <label for="password">Password</label>
+            <div class="campo-password">
+                <input type="password" id="password" name="password"
+                       autocomplete="new-password" required minlength="8" maxlength="128">
+                <button type="button" class="icona-btn" data-mostra-password aria-label="Mostra password">{{ icona("occhio") }}</button>
+            </div>
+            <div class="forza" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+            <p class="aiuto" id="testoForza">Almeno 8 caratteri, con lettere e numeri.</p>
+        </div>
+
+        <div class="campo">
+            <label for="conferma">Ripeti la password</label>
+            <div class="campo-password">
+                <input type="password" id="conferma" name="conferma" autocomplete="new-password" required>
+                <span class="coincide" id="coincide" aria-hidden="true">{{ icona("spunta") }}</span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primario btn-largo">Crea l'account</button>
+    </form>
+
+    <p class="accesso-piede entra" style="--r: 3">Hai già un account? <a href="{{ url_for('login') }}">Accedi</a></p>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Indicatore di robustezza: solo un aiuto visivo, i controlli veri li fa il server.
+    const pw = document.getElementById("password");
+    const conferma = document.getElementById("conferma");
+    const segmenti = document.querySelectorAll(".forza span");
+    const testo = document.getElementById("testoForza");
+    const coincide = document.getElementById("coincide");
+    const livelli = [
+        ["var(--rosso)", "Debole"], ["var(--ambra)", "Così così"],
+        ["var(--blu)", "Buona"], ["var(--verde)", "Ottima"]
+    ];
+
+    pw.addEventListener("input", () => {
+        const v = pw.value;
+        let punti = 0;
+        if (v.length >= 8) punti++;
+        if (/[a-z]/i.test(v) && /\d/.test(v)) punti++;
+        if (v.length >= 12 || (/[a-z]/.test(v) && /[A-Z]/.test(v))) punti++;
+        if (/[^A-Za-z0-9]/.test(v)) punti++;
+        punti = v ? Math.max(1, punti) : 0;
+        segmenti.forEach((s, i) => {
+            s.classList.toggle("piena", i < punti);
+            s.parentElement.style.setProperty("--colore-forza", livelli[Math.max(0, punti - 1)][0]);
+        });
+        testo.textContent = v ? `Robustezza: ${livelli[punti - 1][1]}` : "Almeno 8 caratteri, con lettere e numeri.";
+        controllaUguali();
+    });
+
+    function controllaUguali() {
+        coincide.classList.toggle("si", conferma.value.length > 0 && conferma.value === pw.value);
+    }
+    conferma.addEventListener("input", controllaUguali);
+</script>
+{% endblock %}

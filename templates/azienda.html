@@ -1,0 +1,216 @@
+{% extends "_base.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}{{ a.nome }} · Lumivia{% endblock %}
+
+{% set sezioni = [
+    ("panoramica", "Panoramica"), ("numeri", "Numeri"), ("mission", "Mission"), ("storia", "Storia"),
+    ("servizi", "Servizi"), ("team", "Team"), ("sedi", "Sedi"), ("certificazioni", "Certificazioni"),
+    ("faq", "Domande"), ("contatti", "Contatti")] %}
+
+{% block corpo %}
+{# Barra delle sezioni: resta fissa sotto la barra principale e segue lo scorrimento #}
+<nav class="sezioni-nav" aria-label="Sezioni della pagina">
+    <div class="sezioni-nav-dentro">
+        <div class="sezioni-link" id="sezioniLink">
+            <span class="sezioni-pillola" aria-hidden="true"></span>
+            {% for id, nome in sezioni %}<a href="#{{ id }}">{{ nome }}</a>{% endfor %}
+        </div>
+    </div>
+    <span class="sezioni-progresso" id="progresso" aria-hidden="true"></span>
+</nav>
+
+<main class="contenitore azienda">
+
+    <section id="panoramica" class="az-hero">
+        <h1 class="az-titolo">
+            {% for parola in a.nome.split(" ") %}<span class="parola" style="--r: {{ loop.index0 }}">{{ parola }}</span> {% endfor %}
+        </h1>
+        <p class="az-slogan entra" style="--r: 3">{{ a.slogan }}</p>
+        <div class="az-presentazione">
+            {% for paragrafo in a.presentazione %}<p class="entra" style="--r: {{ 4 + loop.index0 }}">{{ paragrafo }}</p>{% endfor %}
+        </div>
+        <dl class="az-fatti entra" style="--r: 7">
+            <div><dt>Fondata</dt><dd>{{ a.fondazione }}</dd></div>
+            <div><dt>Sede legale</dt><dd>{{ a.sede_legale }}</dd></div>
+            <div><dt>Partita IVA</dt><dd class="num">{{ a.partita_iva }}</dd></div>
+        </dl>
+    </section>
+
+    <section id="numeri" class="az-sezione">
+        <h2 data-rivela>L'azienda in numeri</h2>
+        <div class="az-numeri">
+            {% for n in a.numeri %}
+            <div data-rivela style="--r: {{ loop.index0 }}">
+                <strong>{{ n.valore }}</strong>
+                <span>{{ n.etichetta }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% set max_f = a.fatturato|map(attribute='milioni')|max %}
+        <div class="pannello az-grafico" data-rivela>
+            <h3>Fatturato, in milioni di euro</h3>
+            <div class="colonne">
+                {% for f in a.fatturato %}
+                <div class="colonna">
+                    <span class="colonna-valore num">{{ "%.1f"|format(f.milioni)|replace(".", ",") }}</span>
+                    <div class="colonna-barra"><span style="--h: {{ (f.milioni / max_f * 100)|round(1) }}%; --r: {{ loop.index0 }}"></span></div>
+                    <span class="colonna-anno num">{{ f.anno }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section id="mission" class="az-sezione">
+        <h2 data-rivela>Mission e valori</h2>
+        <div class="az-due">
+            <blockquote class="az-citazione" data-rivela><span>Mission</span>{{ a.mission }}</blockquote>
+            <blockquote class="az-citazione" data-rivela style="--r: 1"><span>Vision</span>{{ a.vision }}</blockquote>
+        </div>
+        <div class="az-valori">
+            {% for v in a.valori %}
+            <div data-rivela style="--r: {{ loop.index0 }}">
+                <h3>{{ v.titolo }}</h3>
+                <p>{{ v.testo }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section id="storia" class="az-sezione">
+        <h2 data-rivela>Dal {{ a.fondazione }} a oggi</h2>
+        <ol class="az-storia">
+            {% for t in a.storia %}
+            <li data-rivela>
+                <span class="anno num">{{ t.anno }}</span>
+                <p>{{ t.evento }}</p>
+            </li>
+            {% endfor %}
+        </ol>
+    </section>
+
+    <section id="servizi" class="az-sezione">
+        <h2 data-rivela>Cosa facciamo</h2>
+        <div class="az-servizi">
+            {% for s in a.servizi %}
+            <article data-rivela style="--r: {{ loop.index0 % 3 }}">
+                <span class="badge">{{ s.per }}</span>
+                <h3>{{ s.nome }}</h3>
+                <p>{{ s.descrizione }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section id="team" class="az-sezione">
+        <h2 data-rivela>Le persone</h2>
+        <div class="az-team">
+            {% for p in a.team %}
+            <div class="persona" data-rivela style="--r: {{ loop.index0 % 3 }}">
+                <span class="avatar" style="--lato: 52px">{{ p.iniziali }}</span>
+                <div><strong>{{ p.nome }}</strong><span>{{ p.ruolo }}</span></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% set max_r = a.reparti|map(attribute='persone')|max %}
+        <div class="pannello az-reparti" data-rivela>
+            <h3>Persone per reparto</h3>
+            {% for r in a.reparti %}
+            <div class="reparto">
+                <span>{{ r.nome }}</span>
+                <div class="reparto-traccia"><span data-larghezza="{{ (r.persone / max_r * 100)|round(1) }}" style="transition-delay: {{ loop.index0 * 90 }}ms"></span></div>
+                <strong class="num">{{ r.persone }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section id="sedi" class="az-sezione">
+        <h2 data-rivela>Dove siamo</h2>
+        <div class="az-sedi">
+            {% for s in a.sedi %}
+            <div class="pannello sede" data-rivela style="--r: {{ loop.index0 }}">
+                <span class="tenue">{{ s.tipo }}</span>
+                <h3>{{ s.citta }}</h3>
+                <p>{{ s.indirizzo }}</p>
+                <span class="badge">{{ icona("utenti") }} {{ s.persone }} persone</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section id="certificazioni" class="az-sezione">
+        <h2 data-rivela>Certificazioni</h2>
+        <ul class="az-certificazioni">
+            {% for c in a.certificazioni %}
+            <li data-rivela style="--r: {{ loop.index0 }}">
+                <span class="cert-segno">{{ icona("scudo") }}</span>
+                <div><strong>{{ c.nome }}</strong><span>{{ c.descrizione }}</span></div>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section id="faq" class="az-sezione">
+        <h2 data-rivela>Domande frequenti</h2>
+        <div class="az-faq">
+            {% for f in a.faq %}
+            <details data-rivela style="--r: {{ loop.index0 }}">
+                <summary>{{ f.domanda }}<span class="piu" aria-hidden="true"></span></summary>
+                <p>{{ f.risposta }}</p>
+            </details>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section id="contatti" class="az-sezione az-contatti" data-rivela>
+        <h2>Parliamone</h2>
+        <p>Rispondiamo entro un giorno lavorativo.</p>
+        <div class="azioni">
+            <a class="btn btn-primario" href="mailto:{{ a.contatti.email }}">{{ icona("busta") }} {{ a.contatti.email }}</a>
+            <span class="badge">{{ a.contatti.telefono }}</span>
+            <span class="badge">{{ a.contatti.orari }}</span>
+        </div>
+        <p class="tenue az-nota">{{ a.nome }} è un'azienda fittizia: i dati di questa pagina sono di esempio.</p>
+    </section>
+</main>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Barra delle sezioni: evidenzia la sezione visibile (scroll-spy) e
+    // fa scorrere la pillola sotto la voce attiva.
+    (() => {
+        const cont = document.getElementById("sezioniLink");
+        const pillola = cont.querySelector(".sezioni-pillola");
+        const links = [...cont.querySelectorAll("a")];
+        const progresso = document.getElementById("progresso");
+        let attiva = null;
+
+        function vaiA(link) {
+            if (!link || link === attiva) return;
+            attiva = link;
+            links.forEach(a => a.toggleAttribute("aria-current", a === link));
+            pillola.style.width = link.offsetWidth + "px";
+            pillola.style.transform = `translateX(${link.offsetLeft}px)`;
+            pillola.style.opacity = "1";
+            // su schermi stretti la barra scorre: porto in vista la voce attiva
+            cont.scrollTo({ left: link.offsetLeft - (cont.clientWidth - link.offsetWidth) / 2, behavior: "smooth" });
+        }
+
+        const oss = new IntersectionObserver((voci) => {
+            voci.forEach(v => {
+                if (v.isIntersecting) vaiA(links.find(a => a.hash === "#" + v.target.id));
+            });
+        }, { rootMargin: "-35% 0px -60% 0px" });
+        links.forEach(a => { const s = document.querySelector(a.hash); s && oss.observe(s); });
+        vaiA(links[0]);
+
+        addEventListener("scroll", () => {
+            const max = document.documentElement.scrollHeight - innerHeight;
+            progresso.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
+            if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) vaiA(links[links.length - 1]);
+        }, { passive: true });
+    })();
+</script>
+{% endblock %}

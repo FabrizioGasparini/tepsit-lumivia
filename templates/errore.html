@@ -1,0 +1,38 @@
+{% extends "_base.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}Errore {{ codice }} · Lumivia{% endblock %}
+
+{% block stile %}
+<style>
+    .errore-pagina { flex: 1; display: grid; place-items: center; padding: 40px 24px; text-align: center; }
+    .errore-codice {
+        font-family: var(--font-titoli);
+        font-size: clamp(96px, 18vw, 180px);
+        font-weight: 800;
+        letter-spacing: -0.06em;
+        line-height: 0.9;
+        color: var(--rosso);
+        display: inline-flex;
+    }
+    .errore-codice span { display: inline-block; animation: cade 0.9s var(--molla) both; animation-delay: calc(var(--r) * 90ms); }
+    @keyframes cade { from { opacity: 0; transform: translateY(-60px) rotate(-14deg); } }
+    .errore-pagina h1 { margin-top: 18px; }
+    .errore-pagina p { margin: 10px auto 28px; color: var(--tenue); max-width: 46ch; }
+    .errore-pagina .azioni { justify-content: center; }
+</style>
+{% endblock %}
+
+{% block corpo %}
+<main class="errore-pagina">
+    <div>
+        <div class="errore-codice" aria-hidden="true">
+            {% for c in codice|string %}<span style="--r: {{ loop.index0 }}">{{ c }}</span>{% endfor %}
+        </div>
+        <h1 class="entra" style="--r: 4">{% if codice == 503 %}Il database non risponde{% else %}Pagina non trovata{% endif %}</h1>
+        <p class="entra" style="--r: 5">{{ messaggio }}</p>
+        <div class="azioni entra" style="--r: 6">
+            <a class="btn btn-primario" href="{{ url_for('dashboard') }}">{{ icona("indietro") }} Torna agli studenti</a>
+        </div>
+    </div>
+</main>
+{% endblock %}

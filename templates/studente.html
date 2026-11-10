@@ -1,0 +1,75 @@
+{% extends "_base.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}{{ s.nome }} {{ s.cognome }} · Lumivia{% endblock %}
+
+{% block corpo %}
+<main class="contenitore stretto">
+    <a class="indietro entra" href="{{ url_for('dashboard') }}">{{ icona("indietro") }} Tutti gli studenti</a>
+
+    <article class="scheda">
+        <div class="scheda-foto entra" style="--r: 1">
+            {% if s.ha_foto %}
+            <img src="{{ url_for('foto_studente', id_studente=s.id) }}" alt="Foto di {{ s.nome }} {{ s.cognome }}">
+            {% else %}
+            <span class="scheda-iniziali" aria-hidden="true">{{ s.nome[:1] }}{{ s.cognome[:1] }}</span>
+            {% endif %}
+        </div>
+
+        <div class="scheda-testa">
+            <h1 class="entra" style="--r: 2">{{ s.nome }} {{ s.cognome }}</h1>
+            <div class="azioni entra" style="--r: 3">
+                <span class="badge badge-blu">{{ s.classe }}</span>
+                <span class="badge">{{ s.indirizzo }}</span>
+                {% if s.data_nascita %}<span class="tenue">{{ s.data_nascita|eta }} anni</span>{% endif %}
+            </div>
+        </div>
+    </article>
+
+    {% if s.media_voti is not none %}
+    {% set m = s.media_voti %}
+    <section class="pannello scheda-media entra" style="--r: 4" aria-label="Media dei voti">
+        <div>
+            <span class="etichetta-piccola">Media dei voti</span>
+            <span class="voto scheda-voto {{ 'insuff' if m < 6 else ('ottimo' if m >= 8 else '') }}"
+                  data-conta="{{ m }}" data-decimali="2" data-ritardo="300">{{ "%.2f"|format(m)|replace(".", ",") }}</span>
+        </div>
+        <div class="righello">
+            <div class="righello-traccia">
+                <div class="righello-pieno {{ 'insuff' if m < 6 else ('ottimo' if m >= 8 else '') }}" data-larghezza="{{ m * 10 }}"></div>
+                <span class="righello-soglia" style="left: 60%"></span>
+            </div>
+            <div class="righello-scala num" aria-hidden="true">
+                {% for n in range(0, 11) %}<span>{{ n }}</span>{% endfor %}
+            </div>
+            <p class="tenue">
+                {% if m >= 8 %}Tra le medie più alte della scuola.
+                {% elif m >= 6 %}Sopra la sufficienza di {{ "%.2f"|format(m - 6)|replace(".", ",") }} punti.
+                {% else %}Sotto la sufficienza di {{ "%.2f"|format(6 - m)|replace(".", ",") }} punti.{% endif %}
+            </p>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="pannello entra" style="--r: 5">
+        <dl class="dettagli">
+            <div><dt>Email</dt><dd><a href="mailto:{{ s.email }}">{{ s.email }}</a></dd></div>
+            <div><dt>Data di nascita</dt><dd class="num">{{ s.data_nascita|data_it }}</dd></div>
+            <div><dt>Classe</dt><dd>{{ s.classe }}</dd></div>
+            <div><dt>Indirizzo di studio</dt><dd>{{ s.indirizzo }}</dd></div>
+            <div><dt>Codice</dt><dd class="num">#{{ s.id }}</dd></div>
+            <div><dt>Foto</dt><dd>{% if s.ha_foto %}Salvata nel database{% else %}<span class="tenue">Nessuna</span>{% endif %}</dd></div>
+        </dl>
+    </section>
+
+    {% if utente_corrente.ruolo == "admin" %}
+    <div class="azioni scheda-azioni entra" style="--r: 6">
+        <a class="btn btn-primario" href="{{ url_for('modifica_studente', id_studente=s.id) }}">{{ icona("matita") }} Modifica</a>
+        <form method="POST" action="{{ url_for('elimina_studente', id_studente=s.id) }}"
+              data-conferma="{{ s.nome }} {{ s.cognome }} e la sua foto verranno eliminati definitivamente."
+              data-conferma-titolo="Eliminare lo studente?" data-conferma-azione="Elimina">
+            <button class="btn btn-pericolo" type="submit">{{ icona("cestino") }} Elimina</button>
+        </form>
+    </div>
+    {% endif %}
+</main>
+{% endblock %}

@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# segreti e configurazioni locali: la password del DB non va mai su GitHub
+.env
+*.local
+
+# editor e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# email salvate in modalità sviluppo (contengono link personali)
+email_inviate/

@@ -1,0 +1,87 @@
+{% extends "_accesso.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}Accedi · Lumivia{% endblock %}
+
+{% block modulo %}
+    <h1 class="entra">Bentornato</h1>
+    <p class="sotto entra" style="--r: 1">Accedi per consultare gli studenti della scuola.</p>
+
+    <div id="errore" class="avviso avviso-errore" role="alert" hidden>
+        {{ icona("attenzione") }}<div id="errore-testo"></div>
+    </div>
+
+    <form id="loginForm" class="entra" style="--r: 2" novalidate>
+        <div class="campo">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" autocomplete="username" required autofocus>
+        </div>
+        <div class="campo">
+            <label for="password">Password</label>
+            <div class="campo-password">
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+                <button type="button" class="icona-btn" data-mostra-password aria-label="Mostra password">{{ icona("occhio") }}</button>
+            </div>
+        </div>
+        <button type="submit" id="btn" class="btn btn-primario btn-largo">Accedi</button>
+    </form>
+
+    <div class="link-riga entra" style="--r: 3">
+        <a href="{{ url_for('password_dimenticata') }}">Password dimenticata?</a>
+        <a href="{{ url_for('reinvia_conferma') }}">Non hai ricevuto l'email?</a>
+    </div>
+    <p class="accesso-piede entra" style="--r: 4">Non hai un account? <a href="{{ url_for('registrati') }}">Registrati</a></p>
+{% endblock %}
+
+{% block script %}
+<script>
+    const form = document.getElementById("loginForm");
+    const boxErrore = document.getElementById("errore");
+    const testoErrore = document.getElementById("errore-testo");
+    const btn = document.getElementById("btn");
+
+    function mostraErrore(msg, link) {
+        testoErrore.textContent = msg;
+        if (link) {
+            // account non attivato: offro il reinvio dell'email
+            const a = document.createElement("a");
+            a.href = link;
+            a.textContent = " Invia di nuovo il link";
+            testoErrore.append(a);
+        }
+        boxErrore.hidden = false;
+        boxErrore.style.animation = "none";
+        void boxErrore.offsetWidth;          // riavvia l'animazione di "scossa"
+        boxErrore.style.animation = "";
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!form.username.value || !form.password.value) {
+            mostraErrore("Inserisci username e password.");
+            return;
+        }
+        btn.setAttribute("aria-busy", "true");
+
+        try {
+            const res = await fetch("{{ url_for('login_post') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: form.username.value, password: form.password.value })
+            });
+            const dati = await res.json();
+
+            if (res.ok) {
+                // il token è già salvato nel cookie dal server
+                window.location.href = dati.redirect;
+                return;
+            }
+            mostraErrore(dati.errore || "Accesso non riuscito.", dati.reinvia);
+            form.password.value = "";
+            form.password.focus();
+        } catch (err) {
+            mostraErrore("Il server non risponde. Controlla che app2.py sia avviato.");
+        }
+        btn.removeAttribute("aria-busy");
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{# Barra di navigazione condivisa. `utente_corrente` arriva dal context_processor
+   in app2.py (None se non loggato). #}
+{% from "_icone.html" import icona %}
+<header class="barra">
+    <div class="barra-dentro">
+        <a class="marchio" href="{{ url_for('dashboard') if utente_corrente else url_for('login') }}">
+            <span class="marchio-segno"><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4L18 8"/></svg></span>
+            Lumivia
+        </a>
+
+        {% if utente_corrente %}
+            {% set voci = [("dashboard", "Studenti"), ("azienda", "Azienda"), ("form", "Modulo")] %}
+            {% if utente_corrente.ruolo == "admin" %}
+                {% set voci = voci + [("pannello_gestione", "Area gestori"), ("gestione_utenti", "Utenti")] %}
+            {% endif %}
+            <nav class="nav-wrap" aria-label="Navigazione principale">
+                <div class="nav">
+                    <span class="nav-pillola" aria-hidden="true"></span>
+                    {% for endpoint, etichetta in voci %}
+                    {% set attivo = request.endpoint == endpoint
+                           or (endpoint == "dashboard" and request.endpoint and "studente" in request.endpoint) %}
+                    <a href="{{ url_for(endpoint) }}" style="--i: {{ loop.index0 }}" {% if attivo %}aria-current="page"{% endif %}>{{ etichetta }}</a>
+                    {% endfor %}
+                </div>
+            </nav>
+
+            <div class="barra-dx">
+                <button class="icona-btn tema-btn" type="button" data-tema-btn aria-label="Cambia tema">
+                    {{ icona("sole", "sole") }}{{ icona("luna", "luna") }}
+                </button>
+
+                <div class="utente-menu">
+                    <button class="utente-btn" type="button" aria-expanded="false" aria-haspopup="true">
+                        <span class="avatar" style="--lato: 28px">{{ utente_corrente.username[:1]|upper }}</span>
+                        <span class="nome">{{ utente_corrente.username }}</span>
+                        {{ icona("giu", "chevron") }}
+                    </button>
+                    <div class="tendina" role="menu">
+                        <div class="tendina-testa">
+                            <strong>{{ utente_corrente.username }}</strong>
+                            <span>{{ utente_corrente.email or "nessuna email" }}</span>
+                            <div style="margin-top: 8px">
+                                {% if utente_corrente.ruolo == "admin" %}
+                                <span class="badge badge-blu">{{ icona("scudo") }} Gestore</span>
+                                {% else %}
+                                <span class="badge">{{ icona("occhio") }} Sola lettura</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if utente_corrente.ruolo == "admin" %}
+                        <a href="{{ url_for('pannello_gestione') }}" role="menuitem">{{ icona("attivita") }} Area gestori</a>
+                        <a href="{{ url_for('gestione_utenti') }}" role="menuitem">{{ icona("utenti") }} Utenti</a>
+                        {% endif %}
+                        <form action="{{ url_for('logout') }}" method="POST">
+                            <button type="submit" class="pericolo" role="menuitem">{{ icona("esci") }} Esci</button>
+                        </form>
+                    </div>
+                </div>
+
+                <button class="icona-btn menu-mobile-btn" type="button" aria-expanded="false" aria-label="Menu">
+                    {{ icona("menu") }}
+                </button>
+            </div>
+        {% else %}
+            <div class="barra-dx">
+                <button class="icona-btn tema-btn" type="button" data-tema-btn aria-label="Cambia tema">
+                    {{ icona("sole", "sole") }}{{ icona("luna", "luna") }}
+                </button>
+                {% if request.endpoint != "login" %}
+                <a class="btn btn-fantasma btn-piccolo" href="{{ url_for('login') }}">Accedi</a>
+                {% endif %}
+                {% if request.endpoint != "registrati" %}
+                <a class="btn btn-primario btn-piccolo" href="{{ url_for('registrati') }}">Crea un account</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</header>

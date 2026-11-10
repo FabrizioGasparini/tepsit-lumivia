@@ -1,0 +1,94 @@
+{% extends "_base.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}Utenti · Lumivia{% endblock %}
+
+{% block corpo %}
+<main class="contenitore">
+    <header class="testata">
+        <div class="entra">
+            <h1>Utenti</h1>
+            <p>Chi può accedere a Lumivia. I gestori possono modificare i dati, gli utenti base solo consultarli.</p>
+        </div>
+    </header>
+
+    <section class="ruoli entra" style="--r: 1" aria-label="Ruoli">
+        <div class="ruolo">
+            <span class="ruolo-segno blu">{{ icona("scudo") }}</span>
+            <div><strong>Gestore</strong><p>Aggiunge, modifica ed elimina studenti e foto, gestisce gli utenti e vede l'area gestori.</p></div>
+        </div>
+        <div class="ruolo">
+            <span class="ruolo-segno">{{ icona("occhio") }}</span>
+            <div><strong>Utente base</strong><p>Consulta studenti e schede ed esporta i dati in CSV.</p></div>
+        </div>
+    </section>
+
+    <section class="pannello entra" style="--r: 2">
+        <div class="risultati-testa">
+            <span><strong class="num">{{ utenti|length }}</strong> <span class="tenue">account</span></span>
+        </div>
+        <div class="tabella-wrap">
+            <table class="tabella">
+                <thead>
+                    <tr>
+                        <th>Utente</th>
+                        <th>Ruolo</th>
+                        <th>Stato</th>
+                        <th class="nascondi-mobile">Registrato</th>
+                        <th class="destra"><span class="sr">Azioni</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in utenti %}
+                    {% set sono_io = u.id == utente_corrente.id %}
+                    <tr class="riga" style="--i: {{ loop.index0 }}">
+                        <td>
+                            <div class="studente">
+                                <span class="avatar">{{ u.username[:1]|upper }}</span>
+                                <span>
+                                    <strong>{{ u.username }}{% if sono_io %} <span class="tenue" style="font-weight: 400">(tu)</span>{% endif %}</strong>
+                                    <small>{{ u.email or "nessuna email" }}</small>
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if sono_io %}
+                            <span class="badge badge-blu">{{ icona("scudo") }} Gestore</span>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('cambia_ruolo', id_utente=u.id) }}" class="campo selettore-ruolo">
+                                <select name="ruolo" aria-label="Ruolo di {{ u.username }}" onchange="this.form.requestSubmit()">
+                                    <option value="utente" {% if u.ruolo == 'utente' %}selected{% endif %}>Utente base</option>
+                                    <option value="admin" {% if u.ruolo == 'admin' %}selected{% endif %}>Gestore</option>
+                                </select>
+                                <noscript><button class="btn btn-piccolo" type="submit">Salva</button></noscript>
+                            </form>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.attivo %}<span class="badge badge-verde"><span class="punto"></span> Attivo</span>
+                            {% else %}<span class="badge badge-ambra"><span class="punto pulsa"></span> Da confermare</span>{% endif %}
+                        </td>
+                        <td class="nascondi-mobile num tenue">{{ u.creato|data_it }}</td>
+                        <td class="destra">
+                            {% if not sono_io %}
+                            <div class="azioni" style="justify-content: flex-end">
+                                {% if not u.attivo %}
+                                <form method="POST" action="{{ url_for('attiva_utente', id_utente=u.id) }}">
+                                    <button class="btn btn-piccolo" type="submit" title="Attiva senza conferma email">{{ icona("spunta") }} Attiva</button>
+                                </form>
+                                {% endif %}
+                                <form method="POST" action="{{ url_for('elimina_utente', id_utente=u.id) }}"
+                                      data-conferma="L'account di {{ u.username }} verrà eliminato e le sue sessioni chiuse subito."
+                                      data-conferma-titolo="Eliminare l'account?" data-conferma-azione="Elimina">
+                                    <button class="icona-btn elimina" type="submit" aria-label="Elimina {{ u.username }}">{{ icona("cestino") }}</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+{% endblock %}

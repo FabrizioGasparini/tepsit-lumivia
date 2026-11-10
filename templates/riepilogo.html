@@ -1,0 +1,28 @@
+{% extends "_base.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}Richiesta inviata · Lumivia{% endblock %}
+
+{% block corpo %}
+<main class="contenitore stretto">
+    <div class="esito-segno" style="background: var(--verde-tenue); color: var(--verde)">{{ icona("spunta") }}</div>
+    <header class="testata entra" style="--r: 1">
+        <div>
+            <h1>Richiesta inviata</h1>
+            <p>Ecco il riepilogo di quello che hai compilato.</p>
+        </div>
+    </header>
+
+    <section class="pannello entra" style="--r: 2">
+        <dl class="dettagli">
+            <div><dt>Nome</dt><dd>{{ dati.nome }}</dd></div>
+            <div><dt>Data</dt><dd class="num">{{ dati.data|data_it }}</dd></div>
+            <div><dt>Tipo di richiesta</dt><dd>{{ dati.tipo|capitalize }}</dd></div>
+        </dl>
+    </section>
+
+    <div class="azioni entra" style="--r: 3; margin-top: 20px">
+        <a class="btn btn-primario" href="{{ url_for('form') }}">{{ icona("piu") }} Nuova richiesta</a>
+        <a class="btn btn-fantasma" href="{{ url_for('dashboard') }}">Torna agli studenti</a>
+    </div>
+</main>
+{% endblock %}

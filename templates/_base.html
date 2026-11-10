@@ -1,0 +1,63 @@
+{% from "_icone.html" import icona %}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titolo %}Lumivia{% endblock %}</title>
+    <meta name="view-transition" content="same-origin">
+
+    {# Tema: applicato prima di disegnare la pagina, così non lampeggia #}
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem("tema"); } catch (e) {}
+            if (!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "scuro" : "chiaro";
+            document.documentElement.dataset.tema = t;
+        })();
+    </script>
+
+    <link rel="preload" href="{{ url_for('static', filename='fonts/bricolage-grotesque-latin-opsz-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ url_for('static', filename='fonts/instrument-sans-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232443E8'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    {% block stile %}{% endblock %}
+</head>
+<body>
+    {% include "_navbar.html" %}
+
+    {% block corpo %}{% endblock %}
+
+    {# Messaggi di conferma / errore (flash) #}
+    {% with messaggi = get_flashed_messages(with_categories=true) %}
+    {% if messaggi %}
+    <div class="toasts" role="status" aria-live="polite">
+        {% for categoria, testo in messaggi %}
+        <div class="toast toast-{{ categoria }}" style="animation-delay: {{ loop.index0 * 90 }}ms">
+            <span class="segno">{{ icona("spunta" if categoria == "ok" else "x") }}</span>
+            <p>{{ testo }}</p>
+            <button type="button" class="icona-btn chiudi" aria-label="Chiudi">{{ icona("x") }}</button>
+            <span class="tempo"></span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {# Finestra di conferma usata dai form con data-conferma #}
+    <dialog class="dialogo" id="dialogo-conferma" aria-labelledby="dialogo-titolo">
+        <div class="dialogo-corpo">
+            <div class="dialogo-segno">{{ icona("attenzione") }}</div>
+            <h2 id="dialogo-titolo">Sei sicuro?</h2>
+            <p id="dialogo-testo"></p>
+        </div>
+        <div class="dialogo-azioni">
+            <button type="button" class="btn" id="dialogo-annulla">Annulla</button>
+            <button type="button" class="btn btn-pieno-rosso" id="dialogo-ok">Conferma</button>
+        </div>
+    </dialog>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+    {% block script %}{% endblock %}
+</body>
+</html>

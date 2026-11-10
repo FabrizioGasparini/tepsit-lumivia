@@ -1,0 +1,199 @@
+{% extends "_base.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}Studenti · Lumivia{% endblock %}
+
+{% macro voto(m) -%}
+    <span class="voto {{ 'insuff' if m < 6 else ('ottimo' if m >= 8 else '') }}">{{ "%.2f"|format(m)|replace(".", ",") }}</span>
+{%- endmacro %}
+
+{% block corpo %}
+{% set gestore = utente_corrente.ruolo == "admin" %}
+<main class="contenitore">
+
+    <header class="testata">
+        <div class="entra">
+            <h1>Studenti</h1>
+            <p>
+                {% if gestore %}Consulta, cerca e aggiorna gli studenti della scuola.
+                {% else %}Consulta e cerca gli studenti della scuola. Il tuo account è in sola lettura.{% endif %}
+            </p>
+        </div>
+        <div class="azioni entra" style="--r: 1">
+            <a class="btn" id="esporta" href="{{ url_for('esporta_csv') }}{% if query_attuale %}?{{ query_attuale }}{% endif %}"
+               title="Scarica in CSV gli studenti filtrati">{{ icona("scarica") }} Esporta CSV</a>
+            {% if gestore %}
+            <a class="btn btn-primario" href="{{ url_for('nuovo_studente') }}">{{ icona("piu") }} Nuovo studente</a>
+            {% endif %}
+        </div>
+    </header>
+
+    {# ---------- Riepilogo: media generale + distribuzione delle medie ---------- #}
+    <section class="riepilogo pannello entra" style="--r: 2" aria-label="Riepilogo">
+        <div class="riepilogo-media">
+            <span class="etichetta-piccola">Media generale</span>
+            <span class="media-grande voto {{ 'insuff' if stats.media is not none and stats.media < 6 }}"
+                  {% if stats.media is not none %}data-conta="{{ stats.media }}" data-decimali="2" data-ritardo="200"{% endif %}>
+                {{ "%.2f"|format(stats.media)|replace(".", ",") if stats.media is not none else "–" }}
+            </span>
+            <dl class="riepilogo-numeri">
+                <div><dt>Studenti</dt><dd class="num" data-conta="{{ stats.totale }}" data-ritardo="300">{{ stats.totale }}</dd></div>
+                <div><dt>Classi</dt><dd class="num" data-conta="{{ stats.classi }}" data-ritardo="400">{{ stats.classi }}</dd></div>
+                {% if stats.migliore %}
+                <div><dt>Media più alta</dt><dd>{{ stats.migliore.nome }} {{ stats.migliore.cognome }}</dd></div>
+                {% endif %}
+            </dl>
+        </div>
+
+        <div class="distribuzione" id="distribuzione">
+            <div class="distribuzione-testa">
+                <h2>Come sono distribuite le medie</h2>
+                <span class="tenue">Clicca una fascia per filtrare</span>
+            </div>
+            <div class="barra-fasce" role="img" aria-label="Distribuzione delle medie">
+                {% for f in stats.fasce if f.n %}
+                <span class="fascia fascia-{{ f.tono }}" data-larghezza="{{ (f.n / stats.totale * 100)|round(2) if stats.totale else 0 }}"
+                      style="transition-delay: {{ 250 + loop.index0 * 120 }}ms"></span>
+                {% endfor %}
+            </div>
+            <ul class="legenda" id="legenda">
+                {% for f in stats.fasce %}
+                {% set attiva = filtri.media_min == f.da and filtri.media_max == f.a %}
+                <li>
+                    <a class="legenda-voce {{ 'attiva' if attiva }}" data-fascia
+                       href="{{ url_for('dashboard', q=filtri.q or None, classe=filtri.classe or None, indirizzo=filtri.indirizzo or None,
+                                        media_min=None if attiva else f.da, media_max=None if attiva else f.a) }}">
+                        <span class="punto-fascia fascia-{{ f.tono }}"></span>
+                        <span>{{ f.etichetta }}</span>
+                        <strong class="num">{{ f.n }}</strong>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+
+    {# ---------- Filtri ---------- #}
+    <form class="filtri entra" style="--r: 3" action="{{ url_for('dashboard') }}" method="GET" role="search"
+          data-filtro-live data-aggiorna="#risultati,#esporta,#legenda">
+        <div class="campo campo-cerca">
+            <label class="sr" for="q">Cerca</label>
+            <div class="campo-icona">
+                {{ icona("cerca") }}
+                <input type="search" id="q" name="q" value="{{ filtri.q }}" placeholder="Cerca per nome, cognome, email o ID" autocomplete="off">
+                <kbd class="tasto" aria-hidden="true">/</kbd>
+            </div>
+        </div>
+        <div class="campo">
+            <label class="sr" for="classe">Classe</label>
+            <select id="classe" name="classe">
+                <option value="">Tutte le classi</option>
+                {% for c in classi %}<option value="{{ c }}" {% if filtri.classe == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="campo">
+            <label class="sr" for="indirizzo">Indirizzo</label>
+            <select id="indirizzo" name="indirizzo">
+                <option value="">Tutti gli indirizzi</option>
+                {% for i in indirizzi %}<option value="{{ i }}" {% if filtri.indirizzo == i %}selected{% endif %}>{{ i }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="campo">
+            <label class="sr" for="media_min">Media minima</label>
+            <input type="number" id="media_min" name="media_min" min="0" max="10" step="0.5" placeholder="Media minima"
+                   value="{{ filtri.media_min if filtri.media_min is not none else '' }}">
+        </div>
+        <input type="hidden" name="media_max" value="{{ filtri.media_max if filtri.media_max is not none else '' }}">
+        <noscript><button class="btn" type="submit">Filtra</button></noscript>
+    </form>
+
+    {# ---------- Risultati (questa parte viene sostituita dai filtri dal vivo) ---------- #}
+    <section class="pannello risultati entra" style="--r: 4" id="risultati" aria-live="polite">
+        <div class="risultati-testa">
+            <span><strong class="num">{{ righe|length }}</strong> <span class="tenue">di {{ totale }} studenti</span></span>
+            {% if filtri.q or filtri.classe or filtri.indirizzo or filtri.media_min is not none or filtri.media_max is not none %}
+            <a class="btn btn-fantasma btn-piccolo" href="{{ url_for('dashboard') }}">{{ icona("x") }} Azzera filtri</a>
+            {% endif %}
+        </div>
+
+        {% if righe %}
+        <div class="tabella-wrap">
+            <table class="tabella">
+                <thead>
+                    <tr>
+                        <th>Studente</th>
+                        <th>Classe</th>
+                        <th class="nascondi-mobile">Indirizzo</th>
+                        <th class="nascondi-mobile">Nascita</th>
+                        <th class="destra">Media</th>
+                        {% if gestore %}<th class="destra"><span class="sr">Azioni</span></th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in righe %}
+                    <tr class="riga" style="--i: {{ loop.index0 }}">
+                        <td>
+                            <a class="studente" href="{{ url_for('scheda_studente', id_studente=s.id) }}">
+                                <span class="avatar">
+                                    {% if s.ha_foto %}<img src="{{ url_for('foto_studente', id_studente=s.id) }}" alt="" loading="lazy">
+                                    {% else %}{{ s.nome[:1] }}{{ s.cognome[:1] }}{% endif %}
+                                </span>
+                                <span>
+                                    <strong>{{ s.cognome }} {{ s.nome }}</strong>
+                                    <small>{{ s.email }}</small>
+                                </span>
+                            </a>
+                        </td>
+                        <td><span class="badge">{{ s.classe }}</span></td>
+                        <td class="nascondi-mobile">{{ s.indirizzo }}</td>
+                        <td class="nascondi-mobile num tenue">{{ s.data_nascita|data_it }}</td>
+                        <td class="destra">{% if s.media_voti is not none %}{{ voto(s.media_voti) }}{% else %}<span class="tenue">–</span>{% endif %}</td>
+                        {% if gestore %}
+                        <td class="destra">
+                            <div class="azioni-riga">
+                                <a class="icona-btn" href="{{ url_for('modifica_studente', id_studente=s.id) }}"
+                                   title="Modifica" aria-label="Modifica {{ s.nome }} {{ s.cognome }}">{{ icona("matita") }}</a>
+                                <form method="POST" action="{{ url_for('elimina_studente', id_studente=s.id) }}"
+                                      data-conferma="{{ s.nome }} {{ s.cognome }} e la sua foto verranno eliminati definitivamente."
+                                      data-conferma-titolo="Eliminare lo studente?" data-conferma-azione="Elimina">
+                                    <button type="submit" class="icona-btn elimina" title="Elimina"
+                                            aria-label="Elimina {{ s.nome }} {{ s.cognome }}">{{ icona("cestino") }}</button>
+                                </form>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="vuoto">
+            {{ icona("cerca") }}
+            <strong>Nessuno studente trovato</strong>
+            Prova a cambiare i filtri o <a href="{{ url_for('dashboard') }}">mostra tutti gli studenti</a>.
+        </div>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Le fasce della distribuzione filtrano senza ricaricare la pagina:
+    // aggiorno i campi del form e lascio fare al filtro dal vivo.
+    document.addEventListener("click", (e) => {
+        const voce = e.target.closest("[data-fascia]");
+        if (!voce) return;
+        e.preventDefault();
+        const url = new URL(voce.href);
+        const form = document.querySelector("form.filtri");
+        form.media_min.value = url.searchParams.get("media_min") || "";
+        form.media_max.value = url.searchParams.get("media_max") || "";
+        form.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    // se l'utente scrive a mano la media minima, tolgo il limite superiore della fascia
+    document.getElementById("media_min").addEventListener("input", () => {
+        document.querySelector("input[name=media_max]").value = "";
+    });
+</script>
+{% endblock %}

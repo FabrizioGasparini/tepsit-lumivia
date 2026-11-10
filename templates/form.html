@@ -1,0 +1,70 @@
+{% extends "_base.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}Modulo di richiesta · Lumivia{% endblock %}
+
+{% block corpo %}
+<main class="contenitore stretto">
+    <header class="testata entra">
+        <div>
+            <h1>Modulo di richiesta</h1>
+            <p>Indica la data, il tuo nome e il tipo di richiesta, poi conferma.</p>
+        </div>
+    </header>
+
+    <form action="{{ url_for('submit') }}" method="POST" class="pannello entra" style="--r: 1">
+        <div class="pannello-corpo">
+            <div class="griglia-2">
+                <div class="campo">
+                    <label for="data">Data</label>
+                    <input type="date" id="data" name="data" required>
+                </div>
+                <div class="campo">
+                    <label for="nome">Nome</label>
+                    <input type="text" id="nome" name="nome" placeholder="Il tuo nome" required>
+                </div>
+            </div>
+
+            <fieldset class="campo segmenti">
+                <legend class="etichetta">Tipo di richiesta</legend>
+                <div class="segmenti-gruppo">
+                    <span class="segmenti-pillola" aria-hidden="true"></span>
+                    {% for valore, etichetta, simbolo in [("personale", "Personale", "occhio"), ("scolastica", "Scolastica", "documento"), ("altro", "Altro", "griglia")] %}
+                    <label>
+                        <input type="radio" name="tipo" value="{{ valore }}" {% if loop.first %}required{% endif %}>
+                        <span>{{ icona(simbolo) }} {{ etichetta }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <label class="spunta">
+                <input type="checkbox" name="conferma" value="true" required>
+                Confermo che i dati inseriti sono corretti
+            </label>
+        </div>
+        <div class="form-piede">
+            <button type="submit" class="btn btn-primario">{{ icona("spunta") }} Invia la richiesta</button>
+        </div>
+    </form>
+</main>
+{% endblock %}
+
+{% block script %}
+<script>
+    // la pillola scivola sotto l'opzione scelta
+    (() => {
+        const gruppo = document.querySelector(".segmenti-gruppo");
+        const pillola = gruppo.querySelector(".segmenti-pillola");
+        function aggiorna() {
+            const scelta = gruppo.querySelector("input:checked");
+            if (!scelta) { pillola.style.opacity = "0"; return; }
+            const l = scelta.parentElement;
+            pillola.style.width = l.offsetWidth + "px";
+            pillola.style.transform = `translateX(${l.offsetLeft}px)`;
+            pillola.style.opacity = "1";
+        }
+        gruppo.addEventListener("change", aggiorna);
+        addEventListener("resize", aggiorna);
+    })();
+</script>
+{% endblock %}

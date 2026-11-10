@@ -1,0 +1,134 @@
+{% extends "_base.html" %}
+{% from "_icone.html" import icona %}
+{% block titolo %}{{ "Modifica studente" if studente else "Nuovo studente" }} · Lumivia{% endblock %}
+
+{% block corpo %}
+{% set ritorno = url_for('scheda_studente', id_studente=studente.id) if studente else url_for('dashboard') %}
+<main class="contenitore stretto">
+    <a class="indietro entra" href="{{ ritorno }}">{{ icona("indietro") }} {{ "Torna alla scheda" if studente else "Tutti gli studenti" }}</a>
+
+    <header class="testata entra" style="--r: 1">
+        <div>
+            <h1>{{ "Modifica " ~ studente.nome ~ " " ~ studente.cognome if studente else "Nuovo studente" }}</h1>
+            <p>La foto viene ridimensionata e salvata direttamente nel database.</p>
+        </div>
+    </header>
+
+    {% if errori %}
+    <div class="avviso avviso-errore" role="alert">
+        {{ icona("attenzione") }}
+        <ul>{% for e in errori %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="pannello entra" style="--r: 2"
+          action="{{ url_for('modifica_studente', id_studente=studente.id) if studente else url_for('nuovo_studente') }}">
+        <div class="pannello-corpo">
+
+            <div class="caricamento" id="caricamento">
+                <div class="anteprima" id="anteprima">
+                    {% if studente and studente.ha_foto %}
+                    <img src="{{ url_for('foto_studente', id_studente=studente.id) }}" alt="Foto attuale">
+                    {% else %}
+                    <span id="iniziali">{{ (valori.nome or "?")[:1] }}{{ (valori.cognome or "")[:1] }}</span>
+                    {% endif %}
+                </div>
+                <div class="caricamento-testo">
+                    <strong>Foto dello studente</strong>
+                    <p class="tenue">Trascina qui un'immagine o <label for="foto" class="link-file">sceglila dal computer</label>.</p>
+                    <p class="aiuto" id="nomeFile">JPG, PNG, WEBP o GIF, al massimo 5 MB.</p>
+                    <input type="file" id="foto" name="foto" accept="image/jpeg,image/png,image/webp,image/gif" class="sr">
+                    {% if studente and studente.ha_foto %}
+                    <label class="spunta" style="margin-top: 12px"><input type="checkbox" name="rimuovi_foto" value="1"> Rimuovi la foto attuale</label>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="griglia-2">
+                <div class="campo">
+                    <label for="nome">Nome</label>
+                    <input type="text" id="nome" name="nome" value="{{ valori.nome }}" required maxlength="50" autocomplete="off">
+                </div>
+                <div class="campo">
+                    <label for="cognome">Cognome</label>
+                    <input type="text" id="cognome" name="cognome" value="{{ valori.cognome }}" required maxlength="50" autocomplete="off">
+                </div>
+                <div class="campo">
+                    <label for="classe">Classe</label>
+                    <input type="text" id="classe" name="classe" value="{{ valori.classe }}" required
+                           maxlength="4" placeholder="4A" style="text-transform: uppercase">
+                </div>
+                <div class="campo">
+                    <label for="indirizzo">Indirizzo di studio</label>
+                    <input type="text" id="indirizzo" name="indirizzo" value="{{ valori.indirizzo }}" required
+                           maxlength="50" list="elencoIndirizzi" placeholder="Informatica">
+                    <datalist id="elencoIndirizzi">{% for i in indirizzi %}<option value="{{ i }}">{% endfor %}</datalist>
+                </div>
+                <div class="campo">
+                    <label for="data_nascita">Data di nascita</label>
+                    <input type="date" id="data_nascita" name="data_nascita" value="{{ valori.data_nascita }}" required>
+                </div>
+                <div class="campo">
+                    <label for="media_voti">Media dei voti <span class="tenue">(facoltativa)</span></label>
+                    <input type="number" id="media_voti" name="media_voti" value="{{ valori.media_voti }}"
+                           min="0" max="10" step="0.01" placeholder="7,50">
+                </div>
+            </div>
+
+            <div class="campo" style="margin-bottom: 0">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ valori.email }}" required maxlength="100"
+                       placeholder="nome.cognome@scuola.it">
+            </div>
+        </div>
+
+        <div class="form-piede">
+            <a class="btn btn-fantasma" href="{{ ritorno }}">Annulla</a>
+            <button type="submit" class="btn btn-primario">{{ icona("spunta") }} {{ "Salva le modifiche" if studente else "Aggiungi lo studente" }}</button>
+        </div>
+    </form>
+</main>
+{% endblock %}
+
+{% block script %}
+<script>
+    const input = document.getElementById("foto");
+    const zona = document.getElementById("caricamento");
+    const anteprima = document.getElementById("anteprima");
+    const nomeFile = document.getElementById("nomeFile");
+
+    function mostra(file) {
+        if (!file || !file.type.startsWith("image/")) return;
+        const img = document.createElement("img");
+        img.alt = "Anteprima";
+        img.src = URL.createObjectURL(file);
+        img.className = "nuova";
+        anteprima.replaceChildren(img);
+        const kb = file.size / 1024;
+        nomeFile.textContent = `${file.name} · ${kb > 1024 ? (kb / 1024).toFixed(1).replace(".", ",") + " MB" : Math.round(kb) + " KB"}`;
+        zona.classList.add("caricata");
+    }
+
+    input.addEventListener("change", () => mostra(input.files[0]));
+    zona.addEventListener("click", (e) => { if (!e.target.closest("label, input")) input.click(); });
+
+    // trascina e rilascia
+    ["dragenter", "dragover"].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add("sopra"); }));
+    ["dragleave", "drop"].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove("sopra"); }));
+    zona.addEventListener("drop", e => {
+        if (e.dataTransfer.files.length) { input.files = e.dataTransfer.files; mostra(input.files[0]); }
+    });
+
+    // le iniziali nell'anteprima seguono nome e cognome finché non c'è una foto
+    const iniziali = document.getElementById("iniziali");
+    if (iniziali) {
+        const aggiorna = () => {
+            const n = document.getElementById("nome").value.trim()[0] || "?";
+            const c = document.getElementById("cognome").value.trim()[0] || "";
+            iniziali.textContent = (n + c).toUpperCase();
+        };
+        document.getElementById("nome").addEventListener("input", aggiorna);
+        document.getElementById("cognome").addEventListener("input", aggiorna);
+    }
+</script>
+{% endblock %}

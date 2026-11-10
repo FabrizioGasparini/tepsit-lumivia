@@ -1,0 +1,28 @@
+{% extends "_base.html" %}
+{# Layout diviso per le pagine di accesso: pannello illustrato a sinistra, form a destra.
+   Le pagine figlie riempiono i blocchi lato_titolo, lato_testo e modulo. #}
+
+{% block corpo %}
+<main class="accesso">
+    <aside class="accesso-lato" aria-hidden="true">
+        <div class="righe"></div>
+        <div class="margine"></div>
+        <div class="voti-volanti">
+            {% for voto, alto, sinistra, misura, rosso in [
+                ("8", 14, 62, 64, false), ("7½", 30, 22, 44, false), ("9", 9, 30, 36, false),
+                ("5", 42, 78, 40, true), ("10", 22, 84, 30, false), ("6+", 54, 44, 52, false),
+                ("8-", 64, 14, 30, false), ("7", 36, 54, 26, false)] %}
+            <span class="{{ 'rosso' if rosso }}" style="--r: {{ loop.index0 }}; top: {{ alto }}%; left: {{ sinistra }}%; font-size: {{ misura }}px">{{ voto }}</span>
+            {% endfor %}
+        </div>
+        <h2 class="entra" style="--r: 3">{% block lato_titolo %}Il registro della classe, finalmente in ordine.{% endblock %}</h2>
+        <p class="entra" style="--r: 4">{% block lato_testo %}Studenti, medie e foto in un unico posto. I gestori aggiornano i dati, gli altri li consultano.{% endblock %}</p>
+    </aside>
+
+    <div class="accesso-form">
+        <div class="accesso-form-dentro">
+            {% block modulo %}{% endblock %}
+        </div>
+    </div>
+</main>
+{% endblock %}
