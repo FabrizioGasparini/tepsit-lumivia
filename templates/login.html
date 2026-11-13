@@ -25,11 +25,6 @@
         <button type="submit" id="btn" class="btn btn-primario btn-largo">Accedi</button>
     </form>
 
-    <div class="link-riga entra" style="--r: 3">
-        <a href="{{ url_for('password_dimenticata') }}">Password dimenticata?</a>
-        <a href="{{ url_for('reinvia_conferma') }}">Non hai ricevuto l'email?</a>
-    </div>
-    <p class="accesso-piede entra" style="--r: 4">Non hai un account? <a href="{{ url_for('registrati') }}">Registrati</a></p>
 {% endblock %}
 
 {% block script %}

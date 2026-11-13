@@ -8,11 +8,7 @@
 
     <article class="scheda">
         <div class="scheda-foto entra" style="--r: 1">
-            {% if s.ha_foto %}
-            <img src="{{ url_for('foto_studente', id_studente=s.id) }}" alt="Foto di {{ s.nome }} {{ s.cognome }}">
-            {% else %}
             <span class="scheda-iniziali" aria-hidden="true">{{ s.nome[:1] }}{{ s.cognome[:1] }}</span>
-            {% endif %}
         </div>
 
         <div class="scheda-testa">
@@ -57,19 +53,8 @@
             <div><dt>Classe</dt><dd>{{ s.classe }}</dd></div>
             <div><dt>Indirizzo di studio</dt><dd>{{ s.indirizzo }}</dd></div>
             <div><dt>Codice</dt><dd class="num">#{{ s.id }}</dd></div>
-            <div><dt>Foto</dt><dd>{% if s.ha_foto %}Salvata nel database{% else %}<span class="tenue">Nessuna</span>{% endif %}</dd></div>
         </dl>
     </section>
 
-    {% if utente_corrente.ruolo == "admin" %}
-    <div class="azioni scheda-azioni entra" style="--r: 6">
-        <a class="btn btn-primario" href="{{ url_for('modifica_studente', id_studente=s.id) }}">{{ icona("matita") }} Modifica</a>
-        <form method="POST" action="{{ url_for('elimina_studente', id_studente=s.id) }}"
-              data-conferma="{{ s.nome }} {{ s.cognome }} e la sua foto verranno eliminati definitivamente."
-              data-conferma-titolo="Eliminare lo studente?" data-conferma-azione="Elimina">
-            <button class="btn btn-pericolo" type="submit">{{ icona("cestino") }} Elimina</button>
-        </form>
-    </div>
-    {% endif %}
 </main>
 {% endblock %}
