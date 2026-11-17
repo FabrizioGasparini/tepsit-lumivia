@@ -13,6 +13,8 @@ Applicazione web in **Python (Flask) + MySQL/MariaDB** per gestire gli studenti 
 - Pagina aziendale con barra di navigazione tra le sezioni
 - Dati della dashboard letti dal database MySQL tramite il modulo `DB_tool.py` (query parametrizzate contro la SQL injection)
 - Scheda di ogni studente
+- Registrazione degli utenti con password salvate come hash PBKDF2-SHA256 con salt
+- Ruoli: **gestore** (admin) e **utente base** (sola lettura); pagina di gestione degli utenti
 
 ## Avvio
 
@@ -23,5 +25,5 @@ python app2.py
 
 Poi apri <http://localhost:5001>.
 
-Credenziali di prova: `ciccio` / `pasticcio1`.
 L'app chiede la password del database all'avvio (oppure impostala nel file `.env`, vedi `.env.esempio`).
+Al primo avvio vengono create le tabelle dell'applicazione e viene chiesto di creare il primo gestore.
